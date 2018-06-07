@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace IdentityDeepDive.Models
 {
-    public class PluralsightUserStore : IUserStore<PluralsightUser>
+    public class PluralsightUserStore : IUserStore<PluralsightUser>, IUserPasswordStore<PluralsightUser>
     {
         public void Dispose()
         {
@@ -49,8 +49,8 @@ namespace IdentityDeepDive.Models
             {
                 await connection.ExecuteAsync(
                     "insert into PluralsightUsers([Id]," + 
-                    "[UserName]" +
-                    "[NormalizedUserName]" + 
+                    "[UserName]," +
+                    "[NormalizedUserName]," + 
                     "[PasswordHash]) " + 
                     "Values(@id, @userName, @normalizedUserName, @passwordHash)",
                     new
@@ -65,24 +65,54 @@ namespace IdentityDeepDive.Models
             return IdentityResult.Success;
         }
 
+        public async Task<IdentityResult> UpdateAsync(PluralsightUser user, CancellationToken cancellationToken)
+        {
+            using(var connection = GetOpenConnection())
+            {
+                await connection.ExecuteAsync(
+                    "update PluralsightIdentity " +
+                    "set [Id] = @id," + 
+                    "[UserName] = @userName," +
+                    "[NormalizedUserName] = @normalizedUserName," +
+                    "[PasswordHash] = @passwordHash" +
+                    "where [Id] = @id",
+                    new
+                    {
+                        id = user.Id,
+                        userName = user.UserName,
+                        normalizedUserName = user.NormalizedUserName,
+                        passwordHash = user.PasswordHash
+                    }
+                );
+            }
+            return IdentityResult.Success;
+        }
+
+        public async Task<PluralsightUser> FindByIdAsync(string userId, CancellationToken cancellationToken)
+        {
+            using(var connection = GetOpenConnection())
+            {
+                return await connection.QueryFirstOrDefaultAsync<PluralsightUser>(
+                    "select * From PluralsightUsers where Id = @id",
+                    new { id = userId }
+                );
+            }
+        }
+
         public Task<IdentityResult> DeleteAsync(PluralsightUser user, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
 
-        public Task<PluralsightUser> FindByIdAsync(string userId, CancellationToken cancellationToken)
+        public async Task<PluralsightUser> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<PluralsightUser> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IdentityResult> UpdateAsync(PluralsightUser user, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
+            using (var connection = GetOpenConnection())
+            {
+                return await connection.QueryFirstOrDefaultAsync<PluralsightUser>(
+                    "select * From PluralsightUsers where NormalizedUserName = @name",
+                    new { name = normalizedUserName }
+                );
+            }
         }
 
         public static DbConnection GetOpenConnection()
@@ -92,6 +122,22 @@ namespace IdentityDeepDive.Models
                                                 "trusted_connection=yes;");
             connection.Open();
             return connection;
+        }
+
+        public Task SetPasswordHashAsync(PluralsightUser user, string passwordHash, CancellationToken cancellationToken)
+        {
+            user.PasswordHash = passwordHash;
+            return Task.CompletedTask;
+        }
+
+        public Task<string> GetPasswordHashAsync(PluralsightUser user, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(user.PasswordHash);
+        }
+
+        public Task<bool> HasPasswordAsync(PluralsightUser user, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(user.PasswordHash != null);
         }
     }
 }
