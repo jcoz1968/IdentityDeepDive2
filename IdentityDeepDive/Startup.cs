@@ -2,8 +2,11 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace IdentityDeepDive
 {
@@ -19,9 +22,13 @@ namespace IdentityDeepDive
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
-            services.AddIdentityCore<IdentityUser>(options => { });
+            var connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;database=PluralsightIdentityDemo.IdentityUser;trusted_connection=yes;";
+            var migrationAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
+            services.AddDbContext<IdentityDbContext>(opt => opt.UseSqlServer(connectionString,
+                sql => sql.MigrationsAssembly(migrationAssembly)));
 
-            services.AddScoped<IUserStore<IdentityUser>, CustomIdentityUserStore>();
+            services.AddIdentityCore<IdentityUser>(options => { });
+            services.AddScoped<IUserStore<IdentityUser>, UserOnlyStore<IdentityUser, IdentityDbContext>>();
 
             //simple cookie authentication
             services.AddAuthentication("cookies").AddCookie("cookies",
