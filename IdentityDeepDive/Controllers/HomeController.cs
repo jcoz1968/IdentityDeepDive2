@@ -15,10 +15,13 @@ namespace IdentityDeepDive.Controllers
     public class HomeController : Controller
     {
         private UserManager<PluralsightUser> _userManager;
+        private IUserClaimsPrincipalFactory<PluralsightUser> _claimsPrincipalFactory;
 
-        public HomeController(UserManager<PluralsightUser> userManager)
+        public HomeController(UserManager<PluralsightUser> userManager,
+            IUserClaimsPrincipalFactory<PluralsightUser> claimsPrincipalFactory)
         {
-            this._userManager = userManager;
+            _userManager = userManager;
+            _claimsPrincipalFactory = claimsPrincipalFactory;
         }
 
         public IActionResult Index()
@@ -90,11 +93,10 @@ namespace IdentityDeepDive.Controllers
 
                 if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
                 {
-                    var identity = new ClaimsIdentity("cookies");
-                    identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id));
-                    identity.AddClaim(new Claim(ClaimTypes.Name, user.UserName));
+                    var principal = await _claimsPrincipalFactory.CreateAsync(user);
 
-                    await HttpContext.SignInAsync("cookies", new ClaimsPrincipal(identity));
+
+                    await HttpContext.SignInAsync("Identity.Application", principal);
 
                     return RedirectToAction("Index");
                 }

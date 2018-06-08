@@ -28,12 +28,12 @@ namespace IdentityDeepDive
             services.AddDbContext<PluralsightUserDbContext>(opt => opt.UseSqlServer(connectionString,
                 sql => sql.MigrationsAssembly(migrationAssembly)));
 
-            services.AddIdentityCore<PluralsightUser>(options => { });
-            services.AddScoped<IUserStore<PluralsightUser>, UserOnlyStore<PluralsightUser, PluralsightUserDbContext>>();
+            services.AddIdentity<PluralsightUser, IdentityRole>(options => { })
+                .AddEntityFrameworkStores<PluralsightUserDbContext>();
+            services.AddScoped<IUserClaimsPrincipalFactory<PluralsightUser>,
+                PluralsightUserClaimsPrincipalFactory>();
 
-            //simple cookie authentication
-            services.AddAuthentication("cookies").AddCookie("cookies",
-                opt => opt.LoginPath = "/Home/Login");
+            services.ConfigureApplicationCookie(opt => opt.LoginPath = "/Home/Login");
 
 
         }
