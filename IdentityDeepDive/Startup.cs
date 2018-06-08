@@ -19,9 +19,9 @@ namespace IdentityDeepDive
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
-            services.AddIdentityCore<PluralsightUser>(options => { });
+            services.AddIdentityCore<IdentityUser>(options => { });
 
-            services.AddScoped<IUserStore<PluralsightUser>, PluralsightUserStore>();
+            services.AddScoped<IUserStore<IdentityUser>, CustomIdentityUserStore>();
 
             //simple cookie authentication
             services.AddAuthentication("cookies").AddCookie("cookies",

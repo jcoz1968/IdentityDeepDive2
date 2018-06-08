@@ -14,9 +14,9 @@ namespace IdentityDeepDive.Controllers
 {
     public class HomeController : Controller
     {
-        private UserManager<PluralsightUser> _userManager;
+        private UserManager<IdentityUser> _userManager;
 
-        public HomeController(UserManager<PluralsightUser> userManager)
+        public HomeController(UserManager<IdentityUser> userManager)
         {
             this._userManager = userManager;
         }
@@ -61,7 +61,7 @@ namespace IdentityDeepDive.Controllers
                 var user = await _userManager.FindByNameAsync(model.UserName);
                 if(user == null)
                 {
-                    user = new PluralsightUser
+                    user = new IdentityUser
                     {
                         Id = Guid.NewGuid().ToString(),
                         UserName = model.UserName
