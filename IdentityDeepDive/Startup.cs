@@ -29,15 +29,25 @@ namespace IdentityDeepDive
             services.AddDbContext<PluralsightUserDbContext>(opt => opt.UseSqlServer(connectionString,
                 sql => sql.MigrationsAssembly(migrationAssembly)));
 
-            services.AddIdentity<PluralsightUser, IdentityRole>(options => { })
+            services.AddIdentity<PluralsightUser, IdentityRole>(options => 
+                {
+                    //options.SignIn.RequireConfirmedEmail = true;
+                    options.Tokens.EmailConfirmationTokenProvider = "emailconf";
+                })
                 .AddEntityFrameworkStores<PluralsightUserDbContext>()
-                .AddDefaultTokenProviders();
+                .AddDefaultTokenProviders()
+                .AddTokenProvider<EmailConfirmationTokenProvider<PluralsightUser>>("emailconf");
 
             services.AddScoped<IUserClaimsPrincipalFactory<PluralsightUser>,
                 PluralsightUserClaimsPrincipalFactory>();
 
+            //Forgot Password/Reset Password token options
             services.Configure<DataProtectionTokenProviderOptions>(opt => 
                 opt.TokenLifespan = TimeSpan.FromHours(3));
+
+            //Email Confirmation token options
+            services.Configure<EmailConfirmationTokenProviderOptions>(opt =>
+                opt.TokenLifespan = TimeSpan.FromDays(2));
 
             services.ConfigureApplicationCookie(opt => opt.LoginPath = "/Home/Login");
 
