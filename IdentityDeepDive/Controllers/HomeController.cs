@@ -16,12 +16,15 @@ namespace IdentityDeepDive.Controllers
     {
         private UserManager<PluralsightUser> _userManager;
         private IUserClaimsPrincipalFactory<PluralsightUser> _claimsPrincipalFactory;
+        private SignInManager<PluralsightUser> _signInManager;
 
         public HomeController(UserManager<PluralsightUser> userManager,
-            IUserClaimsPrincipalFactory<PluralsightUser> claimsPrincipalFactory)
+            IUserClaimsPrincipalFactory<PluralsightUser> claimsPrincipalFactory,
+            SignInManager<PluralsightUser> signInManager)
         {
             _userManager = userManager;
             _claimsPrincipalFactory = claimsPrincipalFactory;
+            _signInManager = signInManager;
         }
 
         public IActionResult Index()
@@ -89,16 +92,10 @@ namespace IdentityDeepDive.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userManager.FindByNameAsync(model.UserName);
-
-                if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+                var signInResult = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, false, false);
+                if(signInResult.Succeeded)
                 {
-                    var principal = await _claimsPrincipalFactory.CreateAsync(user);
 
-
-                    await HttpContext.SignInAsync("Identity.Application", principal);
-
-                    return RedirectToAction("Index");
                 }
 
                 ModelState.AddModelError("", "Invalid UserName or Password");
