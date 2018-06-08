@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Reflection;
 
 namespace IdentityDeepDive
@@ -29,9 +30,14 @@ namespace IdentityDeepDive
                 sql => sql.MigrationsAssembly(migrationAssembly)));
 
             services.AddIdentity<PluralsightUser, IdentityRole>(options => { })
-                .AddEntityFrameworkStores<PluralsightUserDbContext>();
+                .AddEntityFrameworkStores<PluralsightUserDbContext>()
+                .AddDefaultTokenProviders();
+
             services.AddScoped<IUserClaimsPrincipalFactory<PluralsightUser>,
                 PluralsightUserClaimsPrincipalFactory>();
+
+            services.Configure<DataProtectionTokenProviderOptions>(opt => 
+                opt.TokenLifespan = TimeSpan.FromHours(3));
 
             services.ConfigureApplicationCookie(opt => opt.LoginPath = "/Home/Login");
 
