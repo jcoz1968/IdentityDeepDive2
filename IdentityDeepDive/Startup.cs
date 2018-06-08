@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Reflection;
 
 namespace IdentityDeepDive
@@ -28,12 +29,27 @@ namespace IdentityDeepDive
             services.AddDbContext<PluralsightUserDbContext>(opt => opt.UseSqlServer(connectionString,
                 sql => sql.MigrationsAssembly(migrationAssembly)));
 
-            services.AddIdentityCore<PluralsightUser>(options => { });
-            services.AddScoped<IUserStore<PluralsightUser>, UserOnlyStore<PluralsightUser, PluralsightUserDbContext>>();
+            services.AddIdentity<PluralsightUser, IdentityRole>(options => 
+                {
+                    //options.SignIn.RequireConfirmedEmail = true;
+                    options.Tokens.EmailConfirmationTokenProvider = "emailconf";
+                })
+                .AddEntityFrameworkStores<PluralsightUserDbContext>()
+                .AddDefaultTokenProviders()
+                .AddTokenProvider<EmailConfirmationTokenProvider<PluralsightUser>>("emailconf");
 
-            //simple cookie authentication
-            services.AddAuthentication("cookies").AddCookie("cookies",
-                opt => opt.LoginPath = "/Home/Login");
+            services.AddScoped<IUserClaimsPrincipalFactory<PluralsightUser>,
+                PluralsightUserClaimsPrincipalFactory>();
+
+            //Forgot Password/Reset Password token options
+            services.Configure<DataProtectionTokenProviderOptions>(opt => 
+                opt.TokenLifespan = TimeSpan.FromHours(3));
+
+            //Email Confirmation token options
+            services.Configure<EmailConfirmationTokenProviderOptions>(opt =>
+                opt.TokenLifespan = TimeSpan.FromDays(2));
+
+            services.ConfigureApplicationCookie(opt => opt.LoginPath = "/Home/Login");
 
 
         }
