@@ -82,6 +82,14 @@ namespace IdentityDeepDive.Controllers
                             new { token = token, email = user.Email }, Request.Scheme);
                         System.IO.File.WriteAllText("confirmationLink.txt", confirmationEmail);
                     }
+                    else
+                    {
+                        foreach(var error in result.Errors)
+                        {
+                            ModelState.AddModelError("", error.Description);
+                        }
+                        return View();
+                    }
                 }
                 return View("Success");
             }
