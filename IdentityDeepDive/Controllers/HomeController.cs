@@ -124,20 +124,35 @@ namespace IdentityDeepDive.Controllers
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByNameAsync(model.UserName);
-
-                if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+                // check IsLockedOut early to stop brute force attacks
+                if (user != null && !await _userManager.IsLockedOutAsync(user))
                 {
-                    if (!await _userManager.IsEmailConfirmedAsync(user))
+                    if(await _userManager.CheckPasswordAsync(user, model.Password))
                     {
-                        ModelState.AddModelError("", "Email is not confirmed");
-                        return View();
+                        if (!await _userManager.IsEmailConfirmedAsync(user))
+                        {
+                            ModelState.AddModelError("", "Email is not confirmed");
+                            return View();
+                        }
+
+                        // this resets the access failed count when login success
+                        await _userManager.ResetAccessFailedCountAsync(user);
+
+                        var principal = await _claimsPrincipalFactory.CreateAsync(user);
+
+                        await HttpContext.SignInAsync("Identity.Application", principal);
+
+                        return RedirectToAction("Index");
                     }
 
-                    var principal = await _claimsPrincipalFactory.CreateAsync(user);
-
-                    await HttpContext.SignInAsync("Identity.Application", principal);
-
-                    return RedirectToAction("Index");
+                    // increment access failed count
+                    await _userManager.AccessFailedAsync(user);
+                    if(await _userManager.IsLockedOutAsync(user))
+                    {
+                        // email user notifying them of lockout status
+                        // allows the user to be proactive if someone else is 
+                        // trying to get in with their credentials.
+                    }
                 }
 
                 ModelState.AddModelError("", "Invalid UserName or Password");
@@ -200,6 +215,12 @@ namespace IdentityDeepDive.Controllers
                             ModelState.AddModelError("", error.Description);
                         }
                         return View();
+                    }
+                    // this resets the locked out expiration if the user 
+                    // has reset their password
+                    if(await _userManager.IsLockedOutAsync(user))
+                    {
+                        await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow);
                     }
                     return View("Success");
                 }

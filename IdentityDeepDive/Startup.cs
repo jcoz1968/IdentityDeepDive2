@@ -36,6 +36,12 @@ namespace IdentityDeepDive
                     options.Password.RequireNonAlphanumeric = false;
                     options.Password.RequiredUniqueChars = 4;
                     options.User.RequireUniqueEmail = true;
+
+                    options.Lockout.AllowedForNewUsers = true;
+                    options.Lockout.MaxFailedAccessAttempts = 3; //default is 5
+                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10); //default is 5
+
+
                 })
                 .AddEntityFrameworkStores<PluralsightUserDbContext>()
                 .AddDefaultTokenProviders()
